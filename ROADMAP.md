@@ -24,6 +24,8 @@ Items marked *(done)* are in the current beta. What runs where today is listed i
   - Encrypted backups (`openhold-admin`) inside the Docker image.
 - **PCs**
   - Prebuilt Openhold Explorer downloads and a signed installer (MSI), deployable by Intune or Group Policy.
+  - Building Openhold Explorer, the job worker and the import tool without Inventor installed (today the build
+    PC needs Inventor 2025).
   - Prebuilt, signed Inventor and AutoCAD add-in installers (today they're built on a PC with the CAD program).
   - Inventor 2026 testing, and an Inventor 2027 build (.NET 10).
   - A web client for viewing, approvals and non-CAD staff; macOS access through it.

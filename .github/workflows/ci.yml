@@ -40,8 +40,8 @@ jobs:
           dotnet-version: |
             8.0.x
             10.0.x
-      # The Inventor and AutoCAD add-ins need those products installed to build, so CI builds everything else.
-      - run: dotnet build src/Openhold.Desktop
-      - run: dotnet build src/Openhold.Jobs
-      - run: dotnet build src/Openhold.Import
+      # Explorer, the job worker, the import tool and the add-ins compile against Inventor's or AutoCAD's programming
+      # interface, which Openhold never ships, so CI builds the Windows projects that don't.
+      - run: dotnet build src/Openhold.Client.Sdk
+      - run: dotnet build src/Openhold.Client.Ui
       - run: dotnet build src/Openhold.Admin

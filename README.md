@@ -108,8 +108,9 @@ flowchart LR
 
 ## Getting started (development)
 
-Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker. The CAD add-ins also need Inventor or
-AutoCAD installed on the same PC; Openhold never ships Autodesk files.
+Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker. The server, its tests and the client
+libraries build anywhere. Openhold Explorer, the job worker and the import tool also need Inventor 2025 installed,
+and the add-ins need Inventor or AutoCAD; Openhold never ships Autodesk files.
 
 ```sh
 docker compose -f deploy/docker-compose.dev.yml up -d   # PostgreSQL on localhost:5433

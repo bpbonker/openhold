@@ -9,8 +9,10 @@ also need the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dot
 
 ## Openhold Explorer
 
-Prebuilt downloads and an installer are on the [roadmap](../../ROADMAP.md). For now, build it once on any PC with
-the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and copy the folder to each PC:
+Prebuilt downloads and an installer are on the [roadmap](../../ROADMAP.md). For now, build it once and copy the
+folder to each PC. The build PC needs the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and
+**Inventor 2025**, because Explorer reads and writes Inventor files through Inventor's own programming interface
+(the PCs it runs on need Inventor only to work with Inventor files):
 
 ```powershell
 git clone https://github.com/bpbonker/openhold.git
