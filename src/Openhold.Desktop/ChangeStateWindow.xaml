@@ -1,0 +1,59 @@
+<Window x:Class="Openhold.Desktop.ChangeStateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: Change State" Width="780" Height="600" MinWidth="560" MinHeight="420"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="Apply" Content="Change" IsDefault="True" Click="Apply_Click" IsEnabled="False" />
+                <Button Content="Cancel" IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="Change state" />
+            <TextBlock Style="{StaticResource DialogIntro}"
+                       Text="Move the files to another state. They change together or not at all, and the change is recorded in each file's history. Revisions don't change here; use Revise for that." />
+        </StackPanel>
+        <DockPanel Margin="{StaticResource DialogBodyPadding}">
+            <StackPanel DockPanel.Dock="Top">
+                <DockPanel Margin="0,0,0,12">
+                    <Label Content="Change _to" Target="{Binding ElementName=Targets}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <ComboBox x:Name="Targets" DisplayMemberPath="Text" SelectionChanged="Targets_SelectionChanged" MinWidth="300" HorizontalAlignment="Left" />
+                </DockPanel>
+                <CheckBox x:Name="IncludeUses" Margin="0,0,0,12" Checked="IncludeUses_Changed" Unchecked="IncludeUses_Changed"
+                          Content="Include the files these use, where they can make the same change (e.g. release an assembly with its parts)" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+                <Label Content="_Comment" Target="{Binding ElementName=Comment}" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="Comment" />
+                <Border Style="{StaticResource InfoBar}" Margin="0,12,0,0" Visibility="{Binding Visibility, ElementName=ApprovalNote}">
+                    <DockPanel>
+                        <TextBlock Style="{StaticResource MessageIcon}" Text="&#xE946;" Foreground="{DynamicResource InfoText}" />
+                        <TextBlock x:Name="ApprovalNote" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Visibility="Collapsed" />
+                    </DockPanel>
+                </Border>
+                <Border Style="{StaticResource ErrorBar}" Margin="0,12,0,0" Visibility="{Binding Visibility, ElementName=Problem}">
+                    <DockPanel>
+                        <TextBlock Style="{StaticResource MessageIcon}" Text="&#xE783;" Foreground="{DynamicResource DangerText}" />
+                        <TextBlock x:Name="Problem" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Visibility="Collapsed" />
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+            <DataGrid x:Name="Items" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None"
+                      CanUserAddRows="False" SelectionMode="Single" AutomationProperties.Name="Files and what happens to each">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="File" Binding="{Binding Name}" Width="1.4*" />
+                    <DataGridTextColumn Header="Now" Binding="{Binding Current}" Width="0.8*" />
+                    <DataGridTemplateColumn Header="After" Width="2*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Outcome}" Foreground="{Binding OutcomeBrush}" TextWrapping="Wrap" Margin="0,4" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </DockPanel>
+</Window>

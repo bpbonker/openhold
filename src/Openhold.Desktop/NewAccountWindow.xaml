@@ -1,0 +1,35 @@
+<Window x:Class="Openhold.Desktop.NewAccountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: New Openhold Account" Width="480" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="_Create" IsDefault="True" Click="Create_Click" />
+                <Button Content="Cancel" IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="New Openhold account" />
+            <TextBlock Style="{StaticResource DialogIntro}"
+                       Text="For people who can't use Windows sign-in, e.g. at a partner company. They get a temporary password to change when they first sign in." />
+        </StackPanel>
+        <StackPanel Margin="{StaticResource DialogBodyPadding}">
+            <Label Content="_Username" Target="{Binding ElementName=Username}" Style="{StaticResource FieldLabel}" />
+            <TextBox x:Name="Username" />
+            <TextBlock Text="e.g. jsmith, or jsmith@partner.com for someone at another company." Style="{StaticResource CaptionText}" Margin="{StaticResource HintMargin}" />
+            <Label Content="Full _name" Target="{Binding ElementName=DisplayName}" Style="{StaticResource NextFieldLabel}" />
+            <TextBox x:Name="DisplayName" />
+            <Label Content="_Email (optional)" Target="{Binding ElementName=Email}" Style="{StaticResource NextFieldLabel}" />
+            <TextBox x:Name="Email" />
+            <CheckBox x:Name="RequireTwoFactor" Content="Require _two-factor sign-in (recommended)" IsChecked="True" Margin="0,16,0,0" />
+            <Border Style="{StaticResource ErrorBar}" Margin="0,16,0,0" Visibility="{Binding Visibility, ElementName=Problem}">
+                <DockPanel>
+                    <TextBlock Style="{StaticResource MessageIcon}" Text="&#xE783;" Foreground="{DynamicResource DangerText}" />
+                    <TextBlock x:Name="Problem" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Visibility="Collapsed" />
+                </DockPanel>
+            </Border>
+        </StackPanel>
+    </DockPanel>
+</Window>

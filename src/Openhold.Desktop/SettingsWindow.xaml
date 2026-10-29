@@ -1,0 +1,67 @@
+<Window x:Class="Openhold.Desktop.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: Settings" Width="580" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Save" IsDefault="True" Click="Save_Click" />
+                <Button Content="Cancel" IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Text="Connect this PC to Openhold" Style="{StaticResource DialogTitle}" />
+            <TextBlock Style="{StaticResource DialogIntro}"
+                       Text="These settings are shared by Openhold Explorer and the AutoCAD and Inventor add-ins on this PC. Use your own office's server." />
+        </StackPanel>
+        <StackPanel Margin="{StaticResource DialogBodyPadding}">
+            <Label Content="_Server address" Target="{Binding ElementName=ServerBox}" Style="{StaticResource FieldLabel}" />
+            <DockPanel>
+                <Button x:Name="TestButton" DockPanel.Dock="Right" Content="_Test Connection" Margin="8,0,0,0" Click="Test_Click" />
+                <TextBox x:Name="ServerBox" ToolTip="For example http://openhold-server:5080/" />
+            </DockPanel>
+            <!-- The code colours the result (green connected, red not); the bar takes its tint from it. -->
+            <Grid Margin="0,8,0,0">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Text, ElementName=TestResult}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <Border CornerRadius="4" Background="{Binding Foreground, ElementName=TestResult}" Opacity="0.08" />
+                <Border CornerRadius="4" BorderBrush="{Binding Foreground, ElementName=TestResult}" BorderThickness="1" Opacity="0.35" />
+                <TextBlock x:Name="TestResult" TextWrapping="Wrap" Margin="12,8" />
+            </Grid>
+
+            <Label Content="_Vault" Target="{Binding ElementName=VaultBox}" Style="{StaticResource NextFieldLabel}" />
+            <ComboBox x:Name="VaultBox" IsEditable="True" />
+            <TextBlock Style="{StaticResource CaptionText}" Margin="{StaticResource HintMargin}"
+                       Text="Test the connection to see the server's vaults. Keep the usual one unless you've been asked to use another, e.g. a Sandbox for training. Each vault needs its own workspace folder." />
+
+            <Label Content="_Workspace folder" Target="{Binding ElementName=WorkspaceBox}" Style="{StaticResource NextFieldLabel}" />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="_Browse…" Margin="8,0,0,0" Click="Browse_Click" />
+                <TextBox x:Name="WorkspaceBox" />
+            </DockPanel>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="{StaticResource HintMargin}"
+                       Text="Where vault files are kept on this PC. Use the same folder on every PC (e.g. C:\Openhold\Workspace) so CAD references resolve the same way everywhere." />
+
+            <Label Content="Sign in with" Style="{StaticResource NextFieldLabel}" />
+            <!-- AccessText lets the long labels wrap and keep their access keys. -->
+            <RadioButton x:Name="SignInWindows" GroupName="SignIn" Margin="0,2,0,6" VerticalContentAlignment="Top"
+                         AutomationProperties.Name="My Windows account (no password prompt; for people on the organisation's network)">
+                <AccessText TextWrapping="Wrap" Text="My _Windows account (no password prompt; for people on the organisation's network)" />
+            </RadioButton>
+            <RadioButton x:Name="SignInOpenhold" GroupName="SignIn" Margin="0,0,0,2" VerticalContentAlignment="Top"
+                         AutomationProperties.Name="An Openhold account (username, password and authenticator code)">
+                <AccessText TextWrapping="Wrap" Text="An Openhold _account (username, password and authenticator code)" />
+            </RadioButton>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="{StaticResource HintMargin}"
+                       Text="Use what your Openhold administrator set you up with. You sign in once in Openhold Explorer; AutoCAD and Inventor use the same sign-in." />
+        </StackPanel>
+    </DockPanel>
+</Window>

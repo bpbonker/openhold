@@ -1,0 +1,942 @@
+<Window x:Class="Openhold.Desktop.AdministrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:admin="clr-namespace:Openhold.Desktop.Administration"
+        Title="Openhold: Administration" Width="1100" Height="720" MinWidth="820" MinHeight="520" Icon="Openhold.ico"
+        WindowStartupLocation="CenterOwner" Style="{StaticResource AppWindow}">
+    <Window.Resources>
+        <!-- A field's label in the editors. -->
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,14,0,6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <!-- Add, Remove, Move up … under a list. -->
+        <Style x:Key="ListButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="12,3" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+        <Style x:Key="ArrowButton" TargetType="Button" BasedOn="{StaticResource ListButton}">
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="FontFamily" Value="{StaticResource Icons}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Saving: the whole configuration is one document, saved as a new version with a comment. -->
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="SaveButton" Content="_Save Changes" Style="{StaticResource PrimaryButton}" Margin="16,0,0,0" Click="Save_Click" />
+                    <Button Content="Close" IsCancel="True" Click="Close_Click" />
+                </StackPanel>
+                <Label Content="What changed (kept with this version)" Target="{Binding ElementName=Comment}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBox x:Name="Comment" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+        <!-- The code colours the text: red for a problem, blue for a note; the bar takes its tint from it. -->
+        <Grid DockPanel.Dock="Bottom" Margin="24,0,24,12" Visibility="{Binding Visibility, ElementName=Problem}">
+            <Border CornerRadius="4" Background="{Binding Foreground, ElementName=Problem}" Opacity="0.08" />
+            <Border CornerRadius="4" BorderBrush="{Binding Foreground, ElementName=Problem}" BorderThickness="1" Opacity="0.35" />
+            <TextBlock x:Name="Problem" Foreground="{DynamicResource DangerText}" TextWrapping="Wrap" Margin="12,8" Visibility="Collapsed" />
+        </Grid>
+
+        <TabControl x:Name="Tabs" Margin="24,8,24,16" SelectionChanged="Tabs_SelectionChanged">
+            <!-- ================= Groups ================= -->
+            <TabItem Header="Groups">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Add Group" Style="{StaticResource ListButton}" Click="AddGroup_Click" />
+                            <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveGroup_Click" />
+                        </StackPanel>
+                        <ListBox x:Name="GroupList" ItemsSource="{Binding Groups}" DisplayMemberPath="Name" />
+                    </DockPanel>
+                    <Grid Grid.Column="2" DataContext="{Binding SelectedItem, ElementName=GroupList}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="220" />
+                        </Grid.ColumnDefinitions>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="Name" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="Members" Style="{StaticResource Label}" />
+                            <TextBox x:Name="Members" Text="{Binding Members, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto" Height="180" TextWrapping="NoWrap" />
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="Windows usernames, one per line. Pick people from the list on the right, or type a username before they've first used Openhold." />
+                            <TextBlock Text="Privileges" Style="{StaticResource Label}" />
+                            <ItemsControl ItemsSource="{Binding Privileges}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Granted}" Margin="0,2" Content="{Binding Description}"
+                                                  AutomationProperties.Name="{Binding Description}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                       Text="Groups decide who may make a lifecycle change and who signs off approvals; privileges give rights beyond everyday work. Members of Administrators have every privilege." />
+                        </StackPanel>
+                        </ScrollViewer>
+                        <DockPanel Grid.Column="2">
+                            <TextBlock DockPanel.Dock="Top" Text="People who use Openhold" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                            <Button DockPanel.Dock="Bottom" Content="Add to Group" Style="{StaticResource ListButton}" Margin="0,8,0,0" HorizontalAlignment="Left" Click="AddMember_Click" />
+                            <ListBox x:Name="KnownUsers" DisplayMemberPath="Username" SelectionMode="Extended" MouseDoubleClick="AddMember_Click" />
+                        </DockPanel>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Users ================= -->
+            <TabItem x:Name="UsersTab" Header="Users">
+                <DockPanel Margin="0,16,0,0">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Margin="0,0,0,8"
+                               Text="Everyone who can sign in. Windows and organisation accounts appear the first time they sign in; Openhold accounts are created here. Disabling an account stops it at once, whichever way it signs in. What people may do comes from their groups (Groups tab)." />
+                    <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                        <Button Content="_New Openhold Account…" Style="{StaticResource ListButton}" Click="NewAccount_Click" />
+                        <Button Content="_Disable or Enable" Style="{StaticResource ListButton}" Click="ToggleDisabled_Click" />
+                        <Button Content="Require _Two-Factor" Style="{StaticResource ListButton}" Click="ToggleTwoFactorRequired_Click" />
+                        <Button Content="Reset Two-_Factor" Style="{StaticResource ListButton}" Click="ResetTwoFactor_Click" />
+                        <Button Content="Reset _Password" Style="{StaticResource ListButton}" Click="ResetPassword_Click" />
+                        <Button Content="_Unlock" Style="{StaticResource ListButton}" Click="Unlock_Click" />
+                        <Button Content="Sign Out _Everywhere" Style="{StaticResource ListButton}" Click="EndSessions_Click" />
+                    </WrapPanel>
+                    <DataGrid x:Name="Accounts" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None"
+                              SelectionMode="Single" AutomationProperties.Name="Accounts">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="1.2*" />
+                            <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="1.2*" />
+                            <DataGridTextColumn Header="Signs In With" Binding="{Binding Method}" Width="*" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*" />
+                            <DataGridTextColumn Header="Two-Factor" Binding="{Binding TwoFactor}" Width="*" />
+                            <DataGridTextColumn Header="Last Signed In" Binding="{Binding LastSignIn}" Width="1.2*" />
+                            <DataGridTextColumn Header="Sessions" Binding="{Binding Sessions}" Width="80" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= Categories ================= -->
+            <TabItem Header="Categories">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Margin="0,0,0,6"
+                                   Text="New files get the first automatic category, top to bottom, whose rules match." />
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Add" Style="{StaticResource ListButton}" Click="AddCategory_Click" />
+                            <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveCategory_Click" />
+                            <Button Content="&#xE74A;" Style="{StaticResource ArrowButton}" ToolTip="Move up (checked earlier)" AutomationProperties.Name="Move up" Click="CategoryUp_Click" />
+                            <Button Content="&#xE74B;" Style="{StaticResource ArrowButton}" ToolTip="Move down" AutomationProperties.Name="Move down" Click="CategoryDown_Click" />
+                        </StackPanel>
+                        <ListBox x:Name="CategoryList" ItemsSource="{Binding Categories}" DisplayMemberPath="Name" />
+                    </DockPanel>
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel DataContext="{Binding SelectedItem, ElementName=CategoryList}" MaxWidth="620" HorizontalAlignment="Left">
+                            <TextBlock Text="Name" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="Lifecycle" Style="{StaticResource Label}" />
+                            <ComboBox ItemsSource="{Binding DataContext.LifecycleChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedValuePath="Id" SelectedValue="{Binding LifecycleId}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Without a lifecycle, files can always be edited and are never released." />
+                            <TextBlock Text="Revision scheme" Style="{StaticResource Label}" />
+                            <ComboBox ItemsSource="{Binding DataContext.RevisionChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedValuePath="Id" SelectedValue="{Binding RevisionSchemeId}" />
+                            <TextBlock Text="Numbering scheme" Style="{StaticResource Label}" />
+                            <ComboBox ItemsSource="{Binding DataContext.NumberingChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedValuePath="Id" SelectedValue="{Binding NumberingSchemeId}" />
+                            <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="Names new files saved through Openhold (Save to Openhold in Inventor, New Number, Copy Design). See Naming Rules for how it fills in." />
+                            <TextBlock Text="Numbering for files made inside an assembly" Style="{StaticResource Label}" />
+                            <ComboBox ItemsSource="{Binding DataContext.NumberingChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedValuePath="Id" SelectedValue="{Binding ChildNumberingSchemeId}" AutomationProperties.Name="Numbering for files made inside an assembly" />
+                            <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Text="e.g. components numbered after their assembly. Leave as (no numbering) to use the scheme above for these too." />
+                            <CheckBox Content="New files must be named by this scheme" IsChecked="{Binding EnforceNaming}" Margin="0,8,0,0"
+                                      ToolTip="Checked when a new file is first checked in; files already in the vault are never affected." />
+                            <TextBlock Text="File types" Style="{StaticResource Label}" />
+                            <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="e.g. .dwg, .ipt, .iam. Leave empty for any file type." />
+                            <TextBlock Text="Folders" Style="{StaticResource Label}" />
+                            <TextBox Text="{Binding Folders, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="64" VerticalScrollBarVisibility="Auto" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Vault folders, one per line; * matches anything, e.g. $/Library/* for the Library folder and everything in it. Leave empty for any folder." />
+                            <CheckBox Content="Only chosen by an administrator (never assigned automatically)" IsChecked="{Binding Manual}" Margin="0,12,0,0" />
+                            <CheckBox Content="Library parts: shared rather than copied by Copy Design" IsChecked="{Binding Library}" Margin="0,6,0,0" />
+                            <TextBlock Text="Properties people fill in" Style="{StaticResource Label}" />
+                            <TextBox Text="{Binding Properties, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Style="{StaticResource Hint}" Text="e.g. Description, Manufacturer, Manufacturer Part Number." />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Lifecycles ================= -->
+            <TabItem Header="Lifecycles">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Add" Style="{StaticResource ListButton}" Click="AddLifecycle_Click" />
+                            <Button Content="Copy" Style="{StaticResource ListButton}" Click="CopyLifecycle_Click" />
+                            <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveLifecycle_Click" />
+                        </StackPanel>
+                        <ListBox x:Name="LifecycleList" ItemsSource="{Binding Lifecycles}" DisplayMemberPath="Name" />
+                    </DockPanel>
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="LifecycleEditor" DataContext="{Binding SelectedItem, ElementName=LifecycleList}">
+                            <TextBlock Text="Name" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" MaxWidth="400" HorizontalAlignment="Left" Width="400" />
+
+                            <!-- The flow at a glance: each state, coloured like the State column. -->
+                            <ItemsControl ItemsSource="{Binding States}" Margin="0,14,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock x:Name="Arrow" Text="›" Foreground="{DynamicResource Subtle}" FontSize="16" Margin="2,0,6,4" VerticalAlignment="Center" />
+                                            <Border x:Name="Chip" Style="{StaticResource Chip}" Padding="12,4" Background="{DynamicResource InfoBg}" Margin="0,0,4,4">
+                                                <TextBlock x:Name="ChipText" Text="{Binding Name}" Foreground="{DynamicResource InfoText}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <!-- An arrow between states, none before the first. -->
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                                                <Setter TargetName="Arrow" Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Locked}" Value="True">
+                                                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource WarningBg}" />
+                                                <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource WarningText}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Released}" Value="True">
+                                                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource SuccessBg}" />
+                                                <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource SuccessText}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Obsolete}" Value="True">
+                                                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource NeutralBg}" />
+                                                <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource NeutralText}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="States" Style="{StaticResource Label}" />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,6"
+                                       Text="New files start in the first state, which can't be locked. A locked file can't be checked out. Released states count as released (e.g. for &quot;parts must be released&quot; and the QR check)." />
+                            <DataGrid x:Name="StateGrid" ItemsSource="{Binding States}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                      HeadersVisibility="Column" GridLinesVisibility="None" Height="150" SelectionMode="Single">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="State" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="2*" />
+                                    <DataGridTemplateColumn Header="Locked" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate><CheckBox IsChecked="{Binding Locked, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" /></DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Released" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate><CheckBox IsChecked="{Binding Released, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" /></DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Obsolete" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate><CheckBox IsChecked="{Binding Obsolete, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" /></DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Content="Add State" Style="{StaticResource ListButton}" Click="AddState_Click" />
+                                <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveState_Click" />
+                                <Button Content="&#xE74A;" Style="{StaticResource ArrowButton}" ToolTip="Move up" AutomationProperties.Name="Move up" Click="StateUp_Click" />
+                                <Button Content="&#xE74B;" Style="{StaticResource ArrowButton}" ToolTip="Move down" AutomationProperties.Name="Move down" Click="StateDown_Click" />
+                            </StackPanel>
+
+                            <TextBlock Text="Changes allowed between states" Style="{StaticResource Label}" Margin="0,16,0,4" />
+                            <ListBox x:Name="TransitionList" ItemsSource="{Binding Transitions}" DisplayMemberPath="Summary" Height="130" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Content="Add Change" Style="{StaticResource ListButton}" Click="AddTransition_Click" />
+                                <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveTransition_Click" />
+                            </StackPanel>
+
+                            <Border Style="{StaticResource Card}" Background="{DynamicResource SurfaceSubtle}" Margin="0,12,0,0"
+                                    DataContext="{Binding SelectedItem, ElementName=TransitionList}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="From" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                                        <ComboBox ItemsSource="{Binding DataContext.States, ElementName=LifecycleEditor}" DisplayMemberPath="Name"
+                                                  SelectedValuePath="Name" SelectedValue="{Binding From}" />
+                                        <TextBlock Text="To" Style="{StaticResource Label}" />
+                                        <ComboBox ItemsSource="{Binding DataContext.States, ElementName=LifecycleEditor}" DisplayMemberPath="Name"
+                                                  SelectedValuePath="Name" SelectedValue="{Binding To}" />
+                                        <TextBlock Text="Button name" Style="{StaticResource Label}" />
+                                        <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Style="{StaticResource Hint}" Text="What people click, e.g. Release, Submit for review." />
+                                        <TextBlock Text="Who may do it" Style="{StaticResource Label}" />
+                                        <TextBox Text="{Binding Who, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Style="{StaticResource Hint}" Text="Groups, comma separated. Empty means anyone." />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Needs approval from" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                                        <TextBox Text="{Binding Approvals, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Style="{StaticResource Hint}" Text="Groups, comma separated; add x2 for two people, e.g. Checkers, Quality x2. Empty means no approval. Each person counts once." />
+                                        <CheckBox Content="The person who asked may approve it" IsChecked="{Binding SubmitterMayApprove}" Margin="0,8,0,0" />
+                                        <TextBlock Text="Before it can happen" Style="{StaticResource Label}" />
+                                        <CheckBox Content="Everything the file uses must be released" IsChecked="{Binding RequireChildrenReleased}" />
+                                        <CheckBox Content="A comment is required" IsChecked="{Binding RequireComment}" Margin="0,6,0,0" />
+                                        <TextBlock Text="Properties that must be filled in" Margin="0,8,0,4" />
+                                        <TextBox Text="{Binding RequiredProperties, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="Then" Style="{StaticResource Label}" />
+                                        <CheckBox Content="Publish a stamped PDF (drawings and PDFs)" IsChecked="{Binding PublishPdf}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Revision schemes ================= -->
+            <TabItem Header="Revisions">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Add" Style="{StaticResource ListButton}" Click="AddScheme_Click" />
+                            <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveScheme_Click" />
+                        </StackPanel>
+                        <ListBox x:Name="SchemeList" ItemsSource="{Binding RevisionSchemes}" DisplayMemberPath="Name" />
+                    </DockPanel>
+                    <StackPanel Grid.Column="2" x:Name="SchemeEditor" DataContext="{Binding SelectedItem, ElementName=SchemeList}">
+                        <TextBlock Text="Name" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="400" HorizontalAlignment="Left" />
+                        <TextBlock Text="Parts" Style="{StaticResource Label}" />
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,6"
+                                   Text="A revision is made of parts, e.g. a number then a letter (1A). The start sets the first value and, for numbers, the width (01 gives 01, 02 … 10). Skip lists letters never used. The separator goes before the part, e.g. . in A.01. Revising steps the last part; a major revision steps the first and restarts the rest." />
+                        <DataGrid x:Name="PartGrid" ItemsSource="{Binding Parts}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="None" Height="140" SelectionMode="Single">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Kind" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{x:Static admin:RevisionSchemeModel.Kinds}" SelectedItem="{Binding Kind, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Separator before" Binding="{Binding Separator, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                <DataGridTextColumn Header="Start" Binding="{Binding Start, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                <DataGridTextColumn Header="Skip letters" Binding="{Binding Skip, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="Add Part" Style="{StaticResource ListButton}" Click="AddPart_Click" />
+                            <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemovePart_Click" />
+                        </StackPanel>
+                        <TextBlock Text="How it counts" Style="{StaticResource Label}" Margin="0,16,0,4" />
+                        <TextBlock Text="{Binding Example}" FontSize="15" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Numbering ================= -->
+            <TabItem Header="Numbering">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                            <Button Content="Add Scheme" Style="{StaticResource ListButton}" Click="AddNumbering_Click" />
+                            <Button x:Name="AddFromStarter" Content="From a Template…" Style="{StaticResource ListButton}" Click="AddNumberingFromStarter_Click"
+                                    ToolTip="Start from a ready-made scheme for common engineering practice, then make it your own" />
+                            <Button Content="Delete" Style="{StaticResource ListButton}" Click="DeleteNumbering_Click" Margin="0,6,0,0"
+                                    ToolTip="Delete a scheme that has never issued a number and that nothing uses" />
+                        </WrapPanel>
+                        <ListBox x:Name="NumberingList" DisplayMemberPath="Name" SelectionChanged="NumberingList_SelectionChanged" />
+                    </DockPanel>
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+                    <StackPanel x:Name="NumberingEditor" MaxWidth="920" HorizontalAlignment="Left" IsEnabled="False">
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,4" TextWrapping="Wrap"
+                                   Text="Numbering schemes are saved one at a time with their own Save button. A number is never issued twice, and numbers already used by files in the vault are skipped." />
+                        <TextBlock x:Name="NumberingInUse" Style="{StaticResource Hint}" Foreground="{DynamicResource WarningText}" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+                                   Text="This scheme has issued numbers, so its parts, first number and existing codes are fixed. You can still add codes, reword meanings and rules, rename it or switch it off. For a different structure, add a new scheme." />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Name" Style="{StaticResource Label}" />
+                                <TextBox x:Name="NumberingName" AutomationProperties.Name="Scheme name" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="First number" Style="{StaticResource Label}" />
+                                <TextBox x:Name="NumberingStart" AutomationProperties.Name="First number" TextChanged="PartSetting_Changed"
+                                         ToolTip="Where each counter starts, e.g. 1, or 100000 for six-digit numbers" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="Description" Style="{StaticResource Label}" />
+                        <TextBox x:Name="NumberingDescription" AutomationProperties.Name="Description" ToolTip="What the scheme is for, shown when people ask for a number" />
+                        <Border Margin="0,14,0,0" Padding="14,10" CornerRadius="6" Background="{DynamicResource SurfaceSubtle}"
+                                BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="Numbers look like" Style="{StaticResource Hint}" Margin="0" />
+                                <TextBlock x:Name="NumberingExample" FontFamily="{DynamicResource MonoFont}" FontSize="18" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                <TextBlock x:Name="NumberingCounterNote" Style="{StaticResource Hint}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Parts of the number, in order" Style="{StaticResource Label}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="290" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <DockPanel VerticalAlignment="Top">
+                                <WrapPanel x:Name="PartButtons" DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                                    <Button x:Name="AddPartButton" Content="Add Part…" Style="{StaticResource ListButton}" Click="AddSchemePart_Click"
+                                            ToolTip="Add a part after the selected one: fixed text, a pick list, a typed value, a folder's code, the parent assembly's number, the counter…" />
+                                    <Button Content="Up" Style="{StaticResource ListButton}" Click="MovePartUp_Click" ToolTip="Move the selected part earlier" />
+                                    <Button Content="Down" Style="{StaticResource ListButton}" Click="MovePartDown_Click" ToolTip="Move the selected part later" />
+                                    <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveSchemePart_Click" ToolTip="Remove the selected part" />
+                                </WrapPanel>
+                                <ListBox x:Name="PartList" Height="330" SelectionChanged="PartList_SelectionChanged" AutomationProperties.Name="Parts of the number">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,3">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Hint}" Margin="0" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                            <StackPanel x:Name="PartEditor" Grid.Column="2" IsEnabled="False">
+                                <TextBlock Text="Kind of part" Style="{StaticResource Label}" Margin="0" />
+                                <ComboBox x:Name="PartType" SelectionChanged="PartType_SelectionChanged" AutomationProperties.Name="Kind of part" />
+                                <TextBlock x:Name="PartTypeHint" Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                <StackPanel x:Name="PartTextPanel">
+                                    <TextBlock Text="Text" Style="{StaticResource Label}" />
+                                    <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Fixed text" TextChanged="PartSetting_Changed" />
+                                </StackPanel>
+                                <Grid x:Name="PartNamePanel">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="1.4*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Name" Style="{StaticResource Label}" />
+                                        <TextBox x:Name="PartNameBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Name of the value" TextChanged="PartSetting_Changed"
+                                                 ToolTip="A short name for the value, e.g. Area or Project" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Shown to people as" Style="{StaticResource Label}" />
+                                        <TextBox Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Shown to people as" TextChanged="PartSetting_Changed"
+                                                 ToolTip="The question people see when they choose or type it, e.g. Area of the machine" />
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel x:Name="PartCodesPanel">
+                                    <TextBlock x:Name="PartCodesLabel" Text="Codes" Style="{StaticResource Label}" />
+                                    <DataGrid x:Name="PartCodes" ItemsSource="{Binding Codes}" AutoGenerateColumns="False" CanUserAddRows="True" HeadersVisibility="Column"
+                                              GridLinesVisibility="None" Height="170" AutomationProperties.Name="Codes" CellEditEnding="PartCodes_CellEditEnding">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Code" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}" Width="90" />
+                                            <DataGridTextColumn Header="Means" Binding="{Binding Meaning, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <TextBlock x:Name="PartCodesHint" Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Grid x:Name="PartRulesPanel">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.4*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Allowed characters" Style="{StaticResource Label}" />
+                                        <ComboBox ItemsSource="{x:Static admin:SchemePartRow.Formats}" DisplayMemberPath="Name" SelectedValuePath="Id"
+                                                  SelectedValue="{Binding Format}" AutomationProperties.Name="Allowed characters" SelectionChanged="PartSetting_Changed" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Shortest" Style="{StaticResource Label}" />
+                                        <TextBox Text="{Binding MinLength, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Shortest" TextChanged="PartSetting_Changed"
+                                                 ToolTip="The fewest characters allowed; leave empty for no limit" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Longest" Style="{StaticResource Label}" />
+                                        <TextBox Text="{Binding MaxLength, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Longest" TextChanged="PartSetting_Changed"
+                                                 ToolTip="The most characters allowed; leave empty for no limit" />
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel x:Name="PartDefaultPanel">
+                                    <TextBlock Text="Default" Style="{StaticResource Label}" />
+                                    <TextBox Text="{Binding Default, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default" TextChanged="PartSetting_Changed"
+                                             ToolTip="Used when nothing else gives a value; people can change it" />
+                                </StackPanel>
+                                <StackPanel x:Name="PartWidthPanel">
+                                    <TextBlock Text="Digits" Style="{StaticResource Label}" />
+                                    <TextBox Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" Width="80" HorizontalAlignment="Left" AutomationProperties.Name="Digits"
+                                             TextChanged="PartSetting_Changed" ToolTip="How many digits, padded with zeros: 3 gives 001" />
+                                </StackPanel>
+                                <CheckBox x:Name="PartYearPanel" Content="Four digits (2026 rather than 26)" IsChecked="{Binding FourDigitYear}" Margin="0,12,0,0"
+                                          Click="PartSetting_Changed" />
+                            </StackPanel>
+                        </Grid>
+                        <Expander Header="Template text (advanced)" Margin="0,14,0,0">
+                            <StackPanel Margin="0,6,0,0">
+                                <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,4"
+                                           Text="The parts above as one line of text, for copying a scheme or typing one in. {seq:000} is the counter, {field:Name} a value, {check} a check digit, {site} the site, {yy} or {yyyy} the year." />
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="Use This Text" Style="{StaticResource ListButton}" Margin="8,0,0,0" Click="ApplyTemplateText_Click" />
+                                    <TextBox x:Name="NumberingTemplate" FontFamily="{DynamicResource MonoFont}" AutomationProperties.Name="Template text" />
+                                </DockPanel>
+                            </StackPanel>
+                        </Expander>
+                        <CheckBox x:Name="NumberingReuse" Content="Reuse numbers that were reserved but never used" Margin="0,12,0,0" />
+                        <CheckBox x:Name="NumberingEnabled" Content="In use" Margin="0,6,0,0" />
+                        <Button Content="Save This Scheme" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left" Margin="0,14,0,0" Click="SaveNumbering_Click" />
+                    </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Naming rules: the whole picture, category by category ================= -->
+            <TabItem x:Name="NamingTab" Header="Naming Rules" ToolTip="How new files are named, category by category">
+                <DockPanel Margin="0,16,0,0">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Where a new file is saved decides its category (top to bottom, the first whose file types and folders match), the category's numbering scheme names it, and the scheme's fields fill in from the folders above and the assembly it's made in. Pick a scheme or require it right here, then Save Changes. Edit what a scheme's fields fill in from on the Numbering tab, and where a category applies on the Categories tab." />
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Divider}" Background="{DynamicResource SurfaceSubtle}" BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Try a name" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Saved in folder" Style="{StaticResource Hint}" />
+                                    <TextBox x:Name="NamingTryFolder" Text="$/Models/" AutomationProperties.Name="Folder the file is saved in" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="File type" Style="{StaticResource Hint}" />
+                                    <ComboBox x:Name="NamingTryType" IsEditable="True" Text=".ipt" AutomationProperties.Name="File type">
+                                        <ComboBoxItem Content=".ipt" />
+                                        <ComboBoxItem Content=".iam" />
+                                        <ComboBoxItem Content=".idw" />
+                                        <ComboBoxItem Content=".dwg" />
+                                        <ComboBoxItem Content=".pdf" />
+                                        <ComboBoxItem Content=".docx" />
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Made in assembly (optional)" Style="{StaticResource Hint}" />
+                                    <TextBox x:Name="NamingTryParent" AutomationProperties.Name="Assembly it's made in" ToolTip="e.g. PRJ01-02-001.iam" />
+                                </StackPanel>
+                                <Button Grid.Column="6" Content="Try It" Style="{StaticResource PrimaryButton}" VerticalAlignment="Bottom" Click="TryNaming_Click" />
+                            </Grid>
+                            <TextBlock x:Name="NamingTryResult" TextWrapping="Wrap" Margin="0,10,0,0" AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+                    </Border>
+                    <DataGrid x:Name="NamingRulesGrid" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" AutomationProperties.Name="Naming rules by category">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category.Name}" IsReadOnly="True" Width="140" />
+                            <DataGridTextColumn Header="Applies to" Binding="{Binding AppliesTo}" IsReadOnly="True" Width="1.3*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap" /></Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Numbering scheme" Width="1.2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.NumberingChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedValuePath="Id" DisplayMemberPath="Name" SelectedValue="{Binding Category.NumberingSchemeId, UpdateSourceTrigger=PropertyChanged}"
+                                                  AutomationProperties.Name="Numbering scheme" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Made inside an assembly" Width="1.2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.NumberingChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedValuePath="Id" DisplayMemberPath="Name" SelectedValue="{Binding Category.ChildNumberingSchemeId, UpdateSourceTrigger=PropertyChanged}"
+                                                  AutomationProperties.Name="Numbering for files made inside an assembly" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Looks like" Binding="{Binding LooksLike}" IsReadOnly="True" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap" /></Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Fields fill in from" Binding="{Binding FillsIn}" IsReadOnly="True" Width="1.5*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap" /></Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Required" Width="80">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Category.EnforceNaming, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"
+                                                  ToolTip="New files in this category must be named by its scheme" AutomationProperties.Name="Names required" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= Item classes ================= -->
+            <TabItem x:Name="ItemClassesTab" Header="Item Classes" ToolTip="Classes and attributes for the catalogue">
+                <DockPanel Margin="0,16,0,0">
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+                    <TextBlock Text="Catalogue items are numbered by" Style="{StaticResource Label}" Margin="0" />
+                    <ComboBox ItemsSource="{Binding CatalogueNumberingChoices}" SelectedValuePath="Id" DisplayMemberPath="Name" Width="460" HorizontalAlignment="Left"
+                              SelectedValue="{Binding State.CatalogueNumberingSchemeId}" AutomationProperties.Name="Catalogue numbering" />
+                    <TextBlock Style="{StaticResource Hint}" TextWrapping="Wrap"
+                               Text="Any scheme from the Numbering tab. A class can use its own scheme instead (below); its numbers are then issued only by adding catalogue items. Saved with Save Changes." />
+                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Add Class" Style="{StaticResource ListButton}" Click="AddItemClass_Click" />
+                            <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveItemClass_Click" />
+                        </StackPanel>
+                        <ListBox x:Name="ItemClassList" ItemsSource="{Binding ItemClasses}" AutomationProperties.Name="Item classes">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" Margin="{Binding Indent}" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                    <DockPanel Grid.Column="2" DataContext="{Binding SelectedItem, ElementName=ItemClassList}">
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,4" TextWrapping="Wrap"
+                                       Text="Classes sort the catalogue so parts can be found by their parameters. A class's items have its attributes and those of every class above it. Required attributes must be filled in before a part librarian can release an item. Saved with Save Changes." />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="140" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Name" Style="{StaticResource Label}" />
+                                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Class name" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Inside" Style="{StaticResource Label}" />
+                                    <ComboBox ItemsSource="{Binding DataContext.ItemClassChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              SelectedValuePath="Id" DisplayMemberPath="Name" SelectedValue="{Binding ParentId}" AutomationProperties.Name="Parent class" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="UNSPSC (optional)" Style="{StaticResource Label}" />
+                                    <TextBox Text="{Binding Unspsc, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="UNSPSC code" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Numbering for this class's items" Style="{StaticResource Label}" />
+                            <ComboBox ItemsSource="{Binding DataContext.ClassNumberingChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedValuePath="Id" DisplayMemberPath="Name" SelectedValue="{Binding NumberingSchemeId}" AutomationProperties.Name="Class numbering" />
+                            <TextBlock Text="Attributes" Style="{StaticResource Label}" />
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Hint}"
+                                   Text="Type in the empty row to add an attribute. Allowed values: a comma-separated list (e.g. B, C, D) makes it a drop-down; leave empty for any value." />
+                        <DataGrid ItemsSource="{Binding Attributes}" AutoGenerateColumns="False" CanUserAddRows="True" HeadersVisibility="Column" GridLinesVisibility="None"
+                                  AutomationProperties.Name="Attributes">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Attribute" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="1.4*" />
+                                <DataGridTextColumn Header="Unit" Binding="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                                <DataGridCheckBoxColumn Header="Required" Binding="{Binding Required, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                                <DataGridTextColumn Header="Allowed values" Binding="{Binding Choices, UpdateSourceTrigger=PropertyChanged}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Grid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= ERP connections ================= -->
+            <TabItem Header="ERP" ToolTip="ERP connections: where released catalogue items are sent">
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Bottom" Content="New Connection" Style="{StaticResource ListButton}" HorizontalAlignment="Left" Margin="0,8,0,0" Click="NewErpConnection_Click" />
+                        <ListBox x:Name="ErpList" SelectionChanged="ErpList_SelectionChanged" AutomationProperties.Name="ERP connections">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,2">
+                                        <TextBlock Text="{Binding Name}" />
+                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource CaptionText}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+                        <StackPanel x:Name="ErpEditor" MaxWidth="620" HorizontalAlignment="Left" IsEnabled="False">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,4" TextWrapping="Wrap"
+                                       Text="Released catalogue items (and later changes to them) are sent to every connection that's switched on. Connections are optional: with none, nothing is sent anywhere. Saved one at a time with Save Connection; secrets such as API keys are stored encrypted and never shown again." />
+                            <TextBlock x:Name="ErpFromFile" Style="{StaticResource Hint}" Foreground="{DynamicResource WarningText}" Margin="0,6,0,0" Visibility="Collapsed" TextWrapping="Wrap"
+                                       Text="This connection is set in the server's settings file, so it's shown here but changed there." />
+                            <TextBlock Text="Kind" Style="{StaticResource Label}" />
+                            <ComboBox x:Name="ErpKind" DisplayMemberPath="Name" SelectionChanged="ErpKind_SelectionChanged" AutomationProperties.Name="Kind of connection" />
+                            <TextBlock x:Name="ErpKindDescription" Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Name" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="ErpName" AutomationProperties.Name="Connection name" ToolTip="What people see, e.g. simPRO (Company A)" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Id" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="ErpId" AutomationProperties.Name="Connection id" ToolTip="A short id that never changes, e.g. company-a-simpro" />
+                                </StackPanel>
+                            </Grid>
+                            <ItemsControl x:Name="ErpFields" IsTabStop="False" Margin="0,4,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Label}" />
+                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Visibility="{Binding TextVisibility}" AutomationProperties.Name="{Binding Label}" />
+                                            <PasswordBox Visibility="{Binding SecretVisibility}" PasswordChanged="ErpSecret_PasswordChanged" AutomationProperties.Name="{Binding Label}" />
+                                            <TextBlock Text="{Binding Hint}" Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <CheckBox x:Name="ErpEnabled" Content="Switched on: send released items to this ERP" Margin="0,14,0,0" />
+                            <TextBlock x:Name="ErpStatusText" Style="{StaticResource Hint}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                            <WrapPanel Margin="0,14,0,0">
+                                <Button x:Name="ErpSave" Content="Save Connection" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Click="SaveErpConnection_Click" />
+                                <Button Content="Test" Style="{StaticResource ListButton}" Click="TestErpConnection_Click"
+                                        ToolTip="Signs in and reads from the ERP without changing anything there" />
+                                <Button Content="Send All Released Items" Style="{StaticResource ListButton}" Click="SendAllToErp_Click"
+                                        ToolTip="Queues every released and obsolete item for this connection, e.g. just after adding it" />
+                                <Button x:Name="ErpRemove" Content="Remove" Style="{StaticResource ListButton}" Click="RemoveErpConnection_Click" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Jobs ================= -->
+            <TabItem Header="Jobs">
+                <DockPanel Margin="0,16,0,0">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Label Content="Show" Target="{Binding ElementName=JobFilter}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <ComboBox x:Name="JobFilter" Width="160" SelectionChanged="JobFilter_SelectionChanged">
+                            <ComboBoxItem Content="All" Tag="" IsSelected="True" />
+                            <ComboBoxItem Content="Waiting" Tag="queued" />
+                            <ComboBoxItem Content="Running" Tag="running" />
+                            <ComboBoxItem Content="Failed" Tag="failed" />
+                            <ComboBoxItem Content="Done" Tag="done" />
+                        </ComboBox>
+                        <Button Content="Refresh" Style="{StaticResource ListButton}" Margin="8,0,0,0" Click="RefreshJobs_Click" />
+                        <TextBlock Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                   Text="Jobs are done by the Openhold job worker on a machine with AutoCAD." />
+                    </StackPanel>
+                    <DataGrid x:Name="Jobs" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="1.6*" />
+                            <DataGridTextColumn Header="Version" Binding="{Binding Version, StringFormat=v{0}}" Width="72" />
+                            <DataGridTextColumn Header="Job" Binding="{Binding Kind}" Width="60" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="84" />
+                            <DataGridTextColumn Header="Tries" Binding="{Binding Attempts}" Width="58" />
+                            <DataGridTextColumn Header="Queued" Binding="{Binding CreatedAt, StringFormat={}{0:d MMM yyyy h:mm tt}}" Width="160" />
+                            <DataGridTextColumn Header="Worker" Binding="{Binding Worker}" Width="*" />
+                            <DataGridTextColumn Header="Problem" Binding="{Binding LastError}" Width="2*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= Folder permissions ================= -->
+            <TabItem Header="Permissions" ToolTip="Folder permissions">
+                <DockPanel Margin="0,16,0,0">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Margin="0,0,0,10" TextWrapping="Wrap"
+                               Text="A rule gives a group None (the folder is hidden), Read (see and get files) or Change (check out, check in, rename, delete, change state) on a folder and everything below it. The deepest folder with a rule for someone's groups decides; if several of their groups have rules there, the most generous wins. Administrators can always do everything. Saved with Save Changes." />
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Label Content="Folders no rule covers:" Target="{Binding ElementName=DefaultAccess}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <ComboBox x:Name="DefaultAccess" Width="200" SelectionChanged="DefaultAccess_SelectionChanged" AutomationProperties.Name="Access where no rule applies">
+                            <ComboBoxItem Content="Change (everyone)" Tag="Change" />
+                            <ComboBoxItem Content="Read only" Tag="Read" />
+                            <ComboBoxItem Content="Hidden" Tag="None" />
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Explain why: worked out from the rules as they are in this window, saved or not. -->
+                    <Border DockPanel.Dock="Bottom" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Explain why" FontWeight="SemiBold" />
+                            <WrapPanel Margin="0,8,0,0">
+                                <Label Content="Person" Target="{Binding ElementName=ExplainPerson}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ComboBox x:Name="ExplainPerson" Width="200" IsEditable="True" DisplayMemberPath="Username" Margin="0,0,16,0" />
+                                <Label Content="Folder" Target="{Binding ElementName=ExplainFolder}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBox x:Name="ExplainFolder" Width="300" Text="$/" Margin="0,0,8,0" />
+                                <Button Content="Explain" Style="{StaticResource ListButton}" Click="Explain_Click" />
+                            </WrapPanel>
+                            <TextBlock x:Name="ExplainResult" TextWrapping="Wrap" Margin="0,8,0,0" AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+                    </Border>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Add Rule…" Style="{StaticResource ListButton}" Click="AddFolderRule_Click" />
+                        <Button Content="Remove" Style="{StaticResource ListButton}" Click="RemoveFolderRule_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="FolderRulesGrid" ItemsSource="{Binding FolderRules}" AutoGenerateColumns="False" CanUserAddRows="False"
+                              HeadersVisibility="Column" GridLinesVisibility="None" SelectionMode="Single" AutomationProperties.Name="Folder rules">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Folder" Binding="{Binding Path, UpdateSourceTrigger=PropertyChanged}" Width="2*" />
+                            <DataGridTemplateColumn Header="Group" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.GroupChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedValuePath="Id" DisplayMemberPath="Name" SelectedValue="{Binding Group, UpdateSourceTrigger=PropertyChanged}"
+                                                  AutomationProperties.Name="Group" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Access" Width="160">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.AccessChoices, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedValuePath="Value" DisplayMemberPath="Name" SelectedValue="{Binding Access, UpdateSourceTrigger=PropertyChanged}"
+                                                  AutomationProperties.Name="Access" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= Sites ================= -->
+            <TabItem Header="Sites">
+                <DockPanel Margin="0,16,0,0">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Hint}" Margin="0,0,0,10" TextWrapping="Wrap"
+                               Text="Every office's server keeps its own copy of the files and fetches what it lacks from the others. &quot;Still to Arrive&quot; is how many file versions that site hasn't received yet; it should drop to zero within minutes of a check-in. A site that hasn't reported in for a while may be offline." />
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Refresh" Style="{StaticResource ListButton}" Click="RefreshSites_Click" />
+                        <Button Content="Fetch Missing Files Now" Style="{StaticResource ListButton}" Click="CatchUp_Click"
+                                ToolTip="Makes this site's server fetch everything it lacks now, instead of at its next round" />
+                    </StackPanel>
+                    <DataGrid x:Name="Sites" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None" AutomationProperties.Name="Sites">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Site" Binding="{Binding Name}" Width="1.2*" />
+                            <DataGridTextColumn Header="Code" Binding="{Binding Id}" Width="70" />
+                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="1.4*" />
+                            <DataGridTextColumn Header="Still to Arrive" Binding="{Binding Missing}" Width="110" />
+                            <DataGridTextColumn Header="Last Reported" Binding="{Binding LastSeen}" Width="160" />
+                            <DataGridTextColumn Header="Address" Binding="{Binding Url}" Width="2*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= Audit log ================= -->
+            <TabItem x:Name="AuditTab" Header="Audit">
+                <DockPanel Margin="0,16,0,0">
+                    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <Label Content="Person" Target="{Binding ElementName=AuditPerson}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox x:Name="AuditPerson" Width="160" Margin="0,0,16,0" />
+                        <Label Content="Action" Target="{Binding ElementName=AuditAction}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox x:Name="AuditAction" Width="160" Margin="0,0,16,0" ToolTip="e.g. sign_in_failed, checkin, state_changed, item_created" />
+                        <Label Content="Last" Target="{Binding ElementName=AuditDays}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="AuditDays" Width="110" Margin="0,0,16,0">
+                            <ComboBoxItem Content="Day" Tag="1" />
+                            <ComboBoxItem Content="Week" Tag="7" IsSelected="True" />
+                            <ComboBoxItem Content="30 days" Tag="30" />
+                            <ComboBoxItem Content="Year" Tag="365" />
+                        </ComboBox>
+                        <Button Content="Show" Style="{StaticResource ListButton}" Click="ShowAudit_Click" />
+                        <Button Content="Export Access Review…" Style="{StaticResource ListButton}" Click="ExportAccessReview_Click"
+                                ToolTip="Everyone who can sign in, how, when they last did, their groups and privileges: a CSV to keep as evidence of the quarterly review" />
+                    </WrapPanel>
+                    <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Hint}" Margin="0,8,0,0"
+                               Text="The audit log can't be changed or deleted, by anyone. It needs the View Audit privilege (administrators have it)." />
+                    <DataGrid x:Name="Audit" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None" AutomationProperties.Name="Audit log">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="When" Binding="{Binding At, StringFormat={}{0:d MMM yyyy h:mm:ss tt}}" Width="180" />
+                            <DataGridTextColumn Header="Who" Binding="{Binding Username}" Width="140" />
+                            <DataGridTextColumn Header="Site" Binding="{Binding Site}" Width="60" />
+                            <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="150" />
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="160" />
+                            <DataGridTextColumn Header="Details" Binding="{Binding Data}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ================= History ================= -->
+            <TabItem Header="History">
+                <DockPanel Margin="0,16,0,0">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Load This Version" Style="{StaticResource ListButton}" Click="LoadVersion_Click" />
+                        <TextBlock Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                   Text="To go back to an earlier configuration, load it, check it, then Save Changes: it becomes the newest version. Nothing is ever deleted." />
+                    </StackPanel>
+                    <DataGrid x:Name="History" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="70" />
+                            <DataGridTextColumn Header="Saved" Binding="{Binding SavedAt, StringFormat={}{0:d MMM yyyy h:mm tt}}" Width="175" />
+                            <DataGridTextColumn Header="By" Binding="{Binding SavedBy}" Width="160" />
+                            <DataGridTextColumn Header="What changed" Binding="{Binding Comment}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

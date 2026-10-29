@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Brings existing project folders (e.g. from an old vault's working folder) into Openhold with their references,
+    properties and previews. Runs on a PC with Inventor and AutoCAD installed, as a person with change access to the
+    destination folder. The source folder is only ever read: files are copied first and only the copies are opened.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>OpenholdImport</AssemblyName>
+    <ApplicationIcon>..\Openhold.Desktop\Openhold.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Client.Cad\Openhold.Client.Cad.csproj" />
+    <ProjectReference Include="..\Openhold.Client.Ui\Openhold.Client.Ui.csproj" />
+  </ItemGroup>
+
+</Project>

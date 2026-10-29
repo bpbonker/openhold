@@ -1,0 +1,190 @@
+<Window x:Class="Openhold.Desktop.CatalogueWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: Catalogue" Width="1180" Height="760" MinWidth="900" MinHeight="560" Icon="Openhold.ico"
+        WindowStartupLocation="CenterOwner" Style="{StaticResource AppWindow}">
+    <Window.Resources>
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,12,0,6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="ListButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="12,3" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="ObsoleteButton" Content="Make _Obsolete…" Margin="8,0,0,0" Click="Obsolete_Click" Visibility="Collapsed" />
+                    <Button x:Name="ReleaseButton" Content="_Release" Margin="8,0,0,0" Click="Release_Click" Visibility="Collapsed" />
+                    <Button x:Name="SaveButton" Content="_Save" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" Click="Save_Click" IsEnabled="False" />
+                    <Button Content="Close" IsCancel="True" Margin="8,0,0,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="_New Item" Click="NewItem_Click" />
+                    <Button x:Name="ManageClassesButton" Content="Manage _Classes…" Margin="8,0,0,0" Click="ManageClasses_Click"
+                            ToolTip="Add, rename or remove item classes and their attributes (administrators)" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Grid DockPanel.Dock="Bottom" Margin="24,0,24,12" Visibility="{Binding Visibility, ElementName=Message}">
+            <Border CornerRadius="4" Background="{Binding Foreground, ElementName=Message}" Opacity="0.08" />
+            <Border CornerRadius="4" BorderBrush="{Binding Foreground, ElementName=Message}" BorderThickness="1" Opacity="0.35" />
+            <TextBlock x:Name="Message" TextWrapping="Wrap" Margin="12,8" Visibility="Collapsed" AutomationProperties.LiveSetting="Polite" />
+        </Grid>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="Catalogue" />
+            <TextBlock Style="{StaticResource DialogIntro}"
+                       Text="One part number per part, used by every company, site and ERP. Search before adding: a part that's already here keeps its number. New items get their number straight away and start as Draft; a part librarian releases them." />
+        </StackPanel>
+
+        <Grid Margin="{StaticResource DialogBodyPadding}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="6*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Search -->
+            <DockPanel>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SearchText" KeyDown="SearchText_KeyDown" AutomationProperties.Name="Search the catalogue"
+                             ToolTip="Words in the number, description, attributes, manufacturer or their part number, or an old number" />
+                    <Button Grid.Column="1" Content="Search" Margin="8,0,0,0" Click="Search_Click" />
+                </Grid>
+                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <ComboBox x:Name="ClassFilter" Width="220" Margin="0,0,8,0" DisplayMemberPath="Name" SelectedValuePath="Id"
+                              SelectionChanged="Filter_Changed" AutomationProperties.Name="Class" />
+                    <ComboBox x:Name="StateFilter" Width="110" Margin="0,0,8,0" SelectionChanged="Filter_Changed" AutomationProperties.Name="State">
+                        <ComboBoxItem Content="Any state" Tag="" IsSelected="True" />
+                        <ComboBoxItem Content="Draft" Tag="Draft" />
+                        <ComboBoxItem Content="Released" Tag="Released" />
+                        <ComboBoxItem Content="Obsolete" Tag="Obsolete" />
+                    </ComboBox>
+                    <ComboBox x:Name="KindFilter" Width="140" SelectionChanged="Filter_Changed" AutomationProperties.Name="Made or bought">
+                        <ComboBoxItem Content="Made or bought" Tag="" IsSelected="True" />
+                        <ComboBoxItem Content="Made" Tag="made" />
+                        <ComboBoxItem Content="Bought" Tag="bought" />
+                    </ComboBox>
+                </WrapPanel>
+                <DataGrid x:Name="Results" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" GridLinesVisibility="None"
+                          SelectionMode="Single" SelectionChanged="Results_SelectionChanged" AutomationProperties.Name="Items">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Part Number" Binding="{Binding Number}" Width="110" />
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*" />
+                        <DataGridTextColumn Header="State" Binding="{Binding State}" Width="72" />
+                        <DataGridTextColumn Header="Manufacturer Part" Binding="{Binding ManufacturerPartNumber}" Width="*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+
+            <!-- The item -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+                <StackPanel x:Name="Editor" IsEnabled="False">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="ItemNumber" Style="{StaticResource TitleText}" Text="No item selected" VerticalAlignment="Center"
+                                   ToolTip="The part number. Issued by Openhold; never changes and is never reused." />
+                        <Border x:Name="ItemStateChip" Style="{StaticResource Chip}" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock x:Name="ItemState" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock x:Name="ItemHistory" Style="{StaticResource CaptionText}" Margin="0,4,0,0" />
+
+                    <TextBlock Text="Description" Style="{StaticResource Label}" />
+                    <TextBox x:Name="Description" TextChanged="Field_Changed" MaxLength="250" AutomationProperties.Name="Description" />
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Class" Style="{StaticResource Label}" />
+                            <ComboBox x:Name="ItemClass" DisplayMemberPath="Name" SelectedValuePath="Id" SelectionChanged="ItemClass_Changed" AutomationProperties.Name="Class" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Made or bought" Style="{StaticResource Label}" />
+                            <ComboBox x:Name="Kind" SelectionChanged="Field_Changed" AutomationProperties.Name="Made or bought">
+                                <ComboBoxItem Content="Bought" Tag="bought" />
+                                <ComboBoxItem Content="Made" Tag="made" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="Unit" Style="{StaticResource Label}" />
+                            <TextBox x:Name="Unit" TextChanged="Field_Changed" MaxLength="20" AutomationProperties.Name="Unit" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Attributes" Style="{StaticResource Label}" />
+                    <TextBlock x:Name="NoAttributes" Style="{StaticResource CaptionText}" Text="Choose a class to see the attributes its parts have." />
+                    <ItemsControl x:Name="Attributes" IsTabStop="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="1" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Visibility="{Binding TextVisibility}"
+                                             AutomationProperties.Name="{Binding Name}" TextChanged="Field_Changed" />
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" Visibility="{Binding ChoiceVisibility}"
+                                              AutomationProperties.Name="{Binding Name}" SelectionChanged="Field_Changed" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="Manufacturers (approved manufacturer parts)" Style="{StaticResource Label}" />
+                    <DataGrid x:Name="ManufacturerParts" AutoGenerateColumns="False" CanUserAddRows="True" HeadersVisibility="Column" GridLinesVisibility="None"
+                              MinHeight="70" MaxHeight="170" CellEditEnding="Grid_CellEditEnding" AutomationProperties.Name="Manufacturer parts">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Manufacturer" Binding="{Binding Manufacturer}" Width="*" />
+                            <DataGridTextColumn Header="Their Part Number" Binding="{Binding PartNumber}" Width="*" />
+                            <DataGridCheckBoxColumn Header="Preferred" Binding="{Binding Preferred}" Width="80" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,0"
+                               Text="A manufacturer part can belong to one item only, ignoring capitals, spaces and dashes. Type in the empty row to add one." />
+
+                    <TextBlock Text="Other numbers (legacy and ERP cross-references)" Style="{StaticResource Label}" />
+                    <DataGrid x:Name="CrossReferences" AutoGenerateColumns="False" CanUserAddRows="True" HeadersVisibility="Column" GridLinesVisibility="None"
+                              MinHeight="70" MaxHeight="150" CellEditEnding="Grid_CellEditEnding" AutomationProperties.Name="Other numbers">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Where (e.g. Legacy vault, simPRO Company A)" Binding="{Binding System}" Width="*" />
+                            <DataGridTextColumn Header="Number There" Binding="{Binding Number}" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Text="Files" Style="{StaticResource Label}" />
+                    <TextBlock x:Name="NoFiles" Style="{StaticResource CaptionText}"
+                               Text="No files yet. Right-click a file in Explorer and choose Add to Catalogue to link its model, drawing or datasheet." />
+                    <DataGrid x:Name="Files" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="None"
+                              MaxHeight="140" AutomationProperties.Name="Linked files">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="File" Binding="{Binding Name}" Width="*" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Folder" Binding="{Binding FolderPath}" Width="*" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="90" IsReadOnly="True" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button Content="Unlink Selected File" Style="{StaticResource ListButton}" HorizontalAlignment="Left" Margin="0,6,0,0" Click="UnlinkFile_Click" />
+
+                    <TextBlock Text="Notes" Style="{StaticResource Label}" />
+                    <TextBox x:Name="Notes" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54" TextChanged="Field_Changed" AutomationProperties.Name="Notes" />
+
+                    <TextBlock x:Name="ErpStatus" Style="{StaticResource CaptionText}" Margin="0,12,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</Window>

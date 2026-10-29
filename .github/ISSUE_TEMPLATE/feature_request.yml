@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest something Openhold should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to get done, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you'd like
+      description: How you picture it working. If another PDM does this well, say which and how.
+    validations:
+      required: true
+  - type: textarea
+    id: who
+    attributes:
+      label: Who it helps
+      description: e.g. drafters, administrators, a second site, purchasing.

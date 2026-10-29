@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: Server and tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      # Integration tests start their own PostgreSQL with Testcontainers (Docker is on the runner).
+      - run: dotnet test tests/Openhold.Core.Tests
+      - run: dotnet test tests/Openhold.Server.Tests
+
+  docker-image:
+    name: Server image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t openhold-server .
+
+  windows-clients:
+    name: Windows clients
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      # The Inventor and AutoCAD add-ins need those products installed to build, so CI builds everything else.
+      - run: dotnet build src/Openhold.Desktop
+      - run: dotnet build src/Openhold.Jobs
+      - run: dotnet build src/Openhold.Import
+      - run: dotnet build src/Openhold.Admin

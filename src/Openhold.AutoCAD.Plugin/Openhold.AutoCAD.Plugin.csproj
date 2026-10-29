@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    AutoCAD / ACAD Mechanical / AutoCAD Electrical plugin. AutoCAD 2025-2026 host .NET 8.
+    The headless commands (OPENHOLDINDEX, OPENHOLDREPAIRREFS, OPENHOLDWRITEPROPS, OPENHOLDPLOTPDF) use only the core
+    assemblies, so the same DLL also runs in accoreconsole.exe, which Openhold Explorer, the import tool and the job
+    worker use to read, repair and plot drawings without opening AutoCAD. The workflow commands additionally use acmgd.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Copy dependencies (including native BLAKE3) next to the plugin, as AutoCAD loads it from there. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <!-- AutoCAD's managed assemblies depend on the Windows desktop frameworks. -->
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AutoCadDir Condition="'$(AutoCadDir)' == ''">C:\Program Files\Autodesk\AutoCAD 2025</AutoCadDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Referenced from the local AutoCAD install; never copied or committed. -->
+    <Reference Include="accoremgd"><HintPath>$(AutoCadDir)\accoremgd.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="acdbmgd"><HintPath>$(AutoCadDir)\acdbmgd.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="acmgd"><HintPath>$(AutoCadDir)\acmgd.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="AdWindows"><HintPath>$(AutoCadDir)\AdWindows.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Client.Sdk\Openhold.Client.Sdk.csproj" />
+    <ProjectReference Include="..\Openhold.Client.Ui\Openhold.Client.Ui.csproj" />
+  </ItemGroup>
+
+</Project>

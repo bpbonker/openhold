@@ -1,0 +1,38 @@
+name: Beta feedback
+description: How Openhold went for you during the beta, what's missing and what got in the way.
+labels: [beta-feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying the Openhold beta. Something broken? A bug report is better for that.
+        Please leave out real drawings, part data and anything confidential.
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup
+      description: Team size, which CAD products and versions, how many offices or sites, and what you use today (for example Autodesk Vault or a shared drive).
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried
+      description: The everyday work you put through Openhold.
+    validations:
+      required: true
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked well
+  - type: textarea
+    id: blocked
+    attributes:
+      label: What got in the way, or would stop you adopting it
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Openhold version or commit
+      placeholder: 1.0.0-beta.1

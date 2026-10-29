@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AutoCAD autoloader manifest. AutoCAD loads Openhold at startup when this bundle is in an
+  ApplicationPlugins folder. R25.0 = AutoCAD 2025, R25.1 = AutoCAD 2026 (both .NET 8).
+  "AutoCAD*" includes the verticals, e.g. AutoCAD Electrical and AutoCAD Mechanical.
+-->
+<ApplicationPackage
+    SchemaVersion="1.0"
+    AutodeskProduct="AutoCAD"
+    ProductType="Application"
+    Name="Openhold"
+    Description="Openhold PDM: check-out and check-in from AutoCAD"
+    AppVersion="1.0.0"
+    Author="Openhold PDM"
+    ProductCode="{BDCB3130-94C3-454B-B2EE-850A8F86E631}"
+    UpgradeCode="{A00B6091-5D9C-4020-8D0F-7603A97242AC}">
+  <CompanyDetails Name="Openhold PDM" />
+  <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0" SeriesMax="R25.1" />
+  <Components Description="Openhold AutoCAD plugin">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0" SeriesMax="R25.1" />
+    <ComponentEntry
+        AppName="Openhold"
+        ModuleName="./Contents/Win64/Openhold.AutoCAD.Plugin.dll"
+        AppDescription="Openhold PDM check-out and check-in"
+        LoadOnAutoCADStartup="True" />
+  </Components>
+</ApplicationPackage>

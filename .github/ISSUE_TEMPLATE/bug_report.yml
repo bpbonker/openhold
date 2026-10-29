@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in Openhold doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problems go through Security › Report a vulnerability, not here.**
+        Please leave out real drawings, part data and anything confidential.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. In Openhold Explorer, right-click a released drawing…
+        2. …
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      multiple: true
+      options:
+        - Openhold Explorer
+        - Administration
+        - Inventor add-in
+        - AutoCAD / AutoCAD Mechanical plugin
+        - AutoCAD Electrical
+        - Server / replication
+        - Job worker
+        - Import
+        - ERP connector
+        - Docs
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Openhold version or commit
+      placeholder: 1.0.0-beta.1
+    validations:
+      required: true
+  - type: input
+    id: cad
+    attributes:
+      label: CAD product and version, if relevant
+      placeholder: Inventor 2026
+  - type: textarea
+    id: logs
+    attributes:
+      label: Messages or log lines
+      description: The message Openhold showed, and lines from the server log (the LogFolder setting, data/logs by default) around that time.
+      render: text

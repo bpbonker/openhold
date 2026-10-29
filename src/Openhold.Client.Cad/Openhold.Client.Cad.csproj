@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    CAD-file operations outside the CAD applications (reading references and properties, repairing references,
+    writing properties, making PDFs), used by Openhold Explorer, the import tool and the job worker.
+    Inventor files are handled through Apprentice, which is free and installed with Inventor.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <InventorBin Condition="'$(InventorBin)' == ''">C:\Program Files\Autodesk\Inventor 2025\Bin</InventorBin>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compiled against the local Inventor install, never copied or shipped: at run time it's loaded from the PC's own
+         Inventor (InventorInterop.cs). -->
+    <Reference Include="Autodesk.Inventor.Interop"><HintPath>$(InventorBin)\Autodesk.Inventor.Interop.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Client.Sdk\Openhold.Client.Sdk.csproj" />
+  </ItemGroup>
+
+</Project>

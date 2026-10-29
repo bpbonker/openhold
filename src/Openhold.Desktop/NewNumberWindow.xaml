@@ -1,0 +1,48 @@
+<Window x:Class="Openhold.Desktop.NewNumberWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: New Number" Width="640" Height="760" MinWidth="480" MinHeight="420" Icon="Openhold.ico"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CopyButton" Content="_Copy" Margin="8,0,0,0" Click="Copy_Click" IsEnabled="False" />
+                <Button x:Name="ReserveButton" Content="_Reserve Number" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" Click="Reserve_Click" IsDefault="True" />
+                <Button Content="Close" IsCancel="True" Margin="8,0,0,0" />
+            </StackPanel>
+        </Border>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="New number" />
+            <TextBlock Style="{StaticResource DialogIntro}"
+                       Text="Choose a scheme and fill in its fields; the next number shows as you go. Reserve it to hold it for you, then save your file with that name and check it in to keep it." />
+        </StackPanel>
+        <ScrollViewer Margin="{StaticResource DialogBodyPadding}" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Label Content="_Scheme" Target="{Binding ElementName=Schemes}" Style="{StaticResource FieldLabel}" />
+                <ComboBox x:Name="Schemes" DisplayMemberPath="Name" SelectionChanged="Schemes_SelectionChanged" AutomationProperties.Name="Numbering scheme" />
+                <TextBlock x:Name="SchemeDescription" Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                <ItemsControl x:Name="Fields" IsTabStop="False" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,6,0,0">
+                                <Label Content="{Binding Label}" Style="{StaticResource FieldLabel}" />
+                                <ComboBox ItemsSource="{Binding Choices}" DisplayMemberPath="Display" SelectedValuePath="Code" SelectedValue="{Binding Value}"
+                                          Visibility="{Binding ChoiceVisibility}" SelectionChanged="Field_Changed" AutomationProperties.Name="{Binding Label}" />
+                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Visibility="{Binding TextVisibility}"
+                                         TextChanged="Field_Changed" AutomationProperties.Name="{Binding Label}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0" Padding="14">
+                    <StackPanel>
+                        <TextBlock x:Name="ResultLabel" Text="Next number" Style="{StaticResource CaptionText}" />
+                        <TextBox x:Name="Result" FontSize="22" FontWeight="SemiBold" Margin="0,4,0,0" TextWrapping="Wrap"
+                                 AutomationProperties.Name="Number" AutomationProperties.LiveSetting="Polite" Style="{StaticResource CopyableText}" />
+                        <TextBlock x:Name="ResultNote" Style="{StaticResource CaptionText}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

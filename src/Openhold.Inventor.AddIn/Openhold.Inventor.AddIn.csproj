@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Inventor add-in. Inventor 2025-2026 host .NET 8 (Inventor 2027 moves to .NET 10 and needs a
+    separate build). Loaded registry-free through deploy/inventor/Openhold.Inventor.addin.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <UseWindowsForms>true</UseWindowsForms>
+    <InventorBin Condition="'$(InventorBin)' == ''">C:\Program Files\Autodesk\Inventor 2025\Bin</InventorBin>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Referenced from the local Inventor install; never copied or committed. -->
+    <Reference Include="Autodesk.Inventor.Interop"><HintPath>$(InventorBin)\Autodesk.Inventor.Interop.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Client.Sdk\Openhold.Client.Sdk.csproj" />
+    <ProjectReference Include="..\Openhold.Client.Ui\Openhold.Client.Ui.csproj" />
+  </ItemGroup>
+
+</Project>

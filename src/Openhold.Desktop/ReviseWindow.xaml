@@ -1,0 +1,48 @@
+<Window x:Class="Openhold.Desktop.ReviseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: Revise" Width="760" Height="560" MinWidth="500" MinHeight="380"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Revise" IsDefault="True" Click="Revise_Click" />
+                <Button Content="Cancel" IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="Revise" />
+            <TextBlock Style="{StaticResource DialogIntro}"
+                       Text="Give each file its new revision. Openhold suggests the next one from the file's revision scheme; type over it if you need to. The new revision is written into the file (iProperty or title block) and checked in as a new version. Released files are reopened first." />
+        </StackPanel>
+        <DockPanel Margin="{StaticResource DialogBodyPadding}">
+            <CheckBox x:Name="Major" DockPanel.Dock="Top" Content="Major revision (e.g. 1C → 2A)" Margin="0,0,0,12" Checked="Major_Changed" Unchecked="Major_Changed" />
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+                <Label Content="_Reason for the revision" Target="{Binding ElementName=Comment}" Style="{StaticResource FieldLabel}" />
+                <TextBox x:Name="Comment" />
+                <Border Style="{StaticResource ErrorBar}" Margin="0,12,0,0" Visibility="{Binding Visibility, ElementName=Problem}">
+                    <DockPanel>
+                        <TextBlock Style="{StaticResource MessageIcon}" Text="&#xE783;" Foreground="{DynamicResource DangerText}" />
+                        <TextBlock x:Name="Problem" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" Visibility="Collapsed" />
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+            <DataGrid x:Name="Items" AutoGenerateColumns="False" HeadersVisibility="Column" GridLinesVisibility="None"
+                      CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" RowHeight="34" AutomationProperties.Name="Files to revise">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="File" Binding="{Binding Name}" IsReadOnly="True" Width="2*" />
+                    <DataGridTextColumn Header="State" Binding="{Binding State}" IsReadOnly="True" Width="1.3*" />
+                    <DataGridTextColumn Header="Current" Binding="{Binding Current}" IsReadOnly="True" Width="*" />
+                    <DataGridTemplateColumn Header="New Revision" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding NewRevision, UpdateSourceTrigger=PropertyChanged}" Padding="5,3"
+                                         AutomationProperties.Name="{Binding Name, StringFormat=New revision for {0}}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+    </DockPanel>
+</Window>

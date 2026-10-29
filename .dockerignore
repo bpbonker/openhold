@@ -1,0 +1,15 @@
+# Only the source the server image needs. Local data, company files and build output never enter an image.
+**/bin/
+**/obj/
+.git/
+.github/
+.vs/
+data/
+Resources/
+resources/
+testdata/
+docs/
+tests/
+tools/
+*.md
+.env

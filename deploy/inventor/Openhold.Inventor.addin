@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Registry-free Inventor add-in manifest. ClassId must match OpenholdAddIn's [Guid]. 29 = Inventor 2025, 30 = 2026. -->
+<Addin Type="Standard">
+  <ClassId>{1B56EE6F-9CA9-441D-967D-8C325E417AB9}</ClassId>
+  <ClientId>{1B56EE6F-9CA9-441D-967D-8C325E417AB9}</ClientId>
+  <DisplayName>Openhold</DisplayName>
+  <Description>Openhold PDM: check-out and check-in from Inventor</Description>
+  <Assembly>.\Contents\Win64\Openhold.Inventor.AddIn.dll</Assembly>
+  <LoadOnStartUp>1</LoadOnStartUp>
+  <UserUnloadable>1</UserUnloadable>
+  <Hidden>0</Hidden>
+  <SupportedSoftwareVersionGreaterThan>28..</SupportedSoftwareVersionGreaterThan>
+  <SupportedSoftwareVersionLessThan>31..</SupportedSoftwareVersionLessThan>
+  <DataVersion>1</DataVersion>
+  <UserInterfaceVersion>1</UserInterfaceVersion>
+</Addin>

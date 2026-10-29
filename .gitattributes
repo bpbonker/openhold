@@ -1,0 +1,11 @@
+* text=auto
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.sh text eol=lf
+*.sql text eol=lf
+*.yml text eol=lf
+
+# Development scaffolding kept out of the public copy (tools/export-public.ps1 uses git archive).
+tools/Openhold.Spike/ export-ignore
+tools/export-public.ps1 export-ignore

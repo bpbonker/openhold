@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The job worker: runs on a Windows machine with AutoCAD installed, claims jobs from the
+    Openhold server and does them, e.g. publishing a stamped PDF of a drawing when it is released.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>OpenholdJobs</AssemblyName>
+    <ApplicationIcon>..\Openhold.Desktop\Openhold.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+    <PackageReference Include="PDFsharp" Version="6.1.1" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Client.Cad\Openhold.Client.Cad.csproj" />
+  </ItemGroup>
+
+</Project>

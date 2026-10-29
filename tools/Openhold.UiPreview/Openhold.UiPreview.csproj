@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Renders Openhold Explorer's dialogs to PNG files off-screen, with real data from the configured server.
+    For checking layouts without clicking through the app (it also works while the PC is locked).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Openhold.Desktop\Openhold.Desktop.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,23 @@
+<Window x:Class="Openhold.Desktop.ChangeCategoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Openhold: Change Category" Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="Apply" Content="_Change Category" IsDefault="True" Click="Apply_Click" IsEnabled="False" />
+                <Button Content="Cancel" IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <StackPanel DockPanel.Dock="Top" Style="{StaticResource DialogHeader}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="Change category" />
+            <TextBlock x:Name="Intro" Style="{StaticResource DialogIntro}" />
+        </StackPanel>
+        <StackPanel Margin="{StaticResource DialogBodyPadding}">
+            <Label Content="Ca_tegory" Target="{Binding ElementName=Categories}" Style="{StaticResource FieldLabel}" />
+            <ComboBox x:Name="Categories" DisplayMemberPath="Name" SelectionChanged="Categories_SelectionChanged" />
+            <TextBlock x:Name="Explanation" Style="{StaticResource CaptionText}" Margin="0,8,0,0" />
+        </StackPanel>
+    </DockPanel>
+</Window>

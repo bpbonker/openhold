@@ -1,0 +1,18 @@
+<Window x:Class="Openhold.Desktop.PromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="420" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" Style="{StaticResource DialogFooter}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="OK" IsDefault="True" Click="Ok_Click" />
+                <Button Content="Cancel" IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <StackPanel Margin="24,20,24,22">
+            <TextBlock x:Name="Label" Margin="{StaticResource FieldLabelMargin}" TextWrapping="Wrap" />
+            <TextBox x:Name="Input" AutomationProperties.LabeledBy="{Binding ElementName=Label}" />
+        </StackPanel>
+    </DockPanel>
+</Window>

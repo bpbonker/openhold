@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Openhold Explorer: the desktop client, Openhold's counterpart to Autodesk Vault Explorer. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>OpenholdExplorer</AssemblyName>
+    <RootNamespace>Openhold.Desktop</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Drawn by tools\make-icon.ps1. -->
+    <ApplicationIcon>Openhold.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Openhold.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Client.Sdk\Openhold.Client.Sdk.csproj" />
+    <ProjectReference Include="..\Openhold.Client.Ui\Openhold.Client.Ui.csproj" />
+    <ProjectReference Include="..\Openhold.Client.Cad\Openhold.Client.Cad.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
+</Project>

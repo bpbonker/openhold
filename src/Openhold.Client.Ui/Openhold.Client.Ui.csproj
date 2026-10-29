@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Dialogs shared by the CAD add-ins (AutoCAD, Inventor), so every host asks the same questions the same way, and
+    Windows shell thumbnails, also used by Openhold Explorer and the import tool.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Openhold.Core\Openhold.Core.csproj" />
+  </ItemGroup>
+
+</Project>
